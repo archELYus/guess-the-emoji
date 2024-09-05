@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Emoji Story</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: linear-gradient(to right, #ffecd2, #fcb69f);
+            color: #333;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        h1 {
+            font-size: 3em;
+            margin-top: 20px;
+        }
+        .emoji {
+            font-size: 3em;
+            margin: 20px 0;
+        }
+        .input-field {
+            margin: 20px 0;
+        }
+        input {
+            font-size: 1.5em;
+            padding: 10px;
+            width: 80%;
+            max-width: 400px;
+        }
+        button {
+            font-size: 1.5em;
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: #ff7e5f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #ff6b4a;
+        }
+        #result {
+            font-size: 2em;
+            margin-top: 20px;
+        }
+        #timer {
+            font-size: 2em;
+            margin-top: 20px;
+        }
+        #login {
+            display: none;
+        }
+        #game {
+            display: none;
+        }
+        .bubble {
+            position: absolute;
+            padding: 10px 20px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 1em;
+            animation: float 5s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0); }
+        }
+        @keyframes highlight {
+            0% { background-color: rgba(255, 255, 255, 0.8); }
+            50% { background-color: rgba(255, 255, 0, 0.8); }
+            100% { background-color: rgba(255, 255, 255, 0.8); }
+        }
+    </style>
+</head>
+<body>
+    <div id="login">
+        <h1>Login</h1>
+        <div class="input-field">
+            <input type="text" id="username" placeholder="Enter your name">
+            <button onclick="startGame()">Start Game</button>
+        </div>
+    </div>
+    <div id="game">
+        <h1>Guess the Emoji Story</h1>
+        <p id="story" class="emoji">👩‍💼📊🐱🎤</p>
+        <div class="input-field">
+            <input type="text" id="guess" placeholder="Enter your guess here">
+            <button onclick="checkGuess()">Submit</button>
+            <button onclick="showAnswer()">Show Answer</button>
+            <button onclick="nextStory()">Next</button>
+        </div>
+        <p id="result"></p>
+        <p id="timer">Time left: 15s</p>
+    </div>
+    <div id="user-list"></div>
+
+    <script>
+        const stories = [
+            { emojis: "👩‍💼📊🐱🎤", answer: "Mau is an office girl who loves cats and singing" },
+            { emojis: "👩‍💼💻☕🎶", answer: "Mau works on a computer, loves coffee, and enjoys music" },
+            { emojis: "👩‍💼📚🐱🍰", answer: "Mau is an accountant, loves cats, and enjoys baking" },
+            { emojis: "👩‍💼📈🐱🎨", answer: "Mau is an accountant, loves cats, and enjoys painting" },
+            { emojis: "👩‍💼📝🐱🎥", answer: "Mau is an accountant, loves cats, and enjoys making videos" },
+            { emojis: "👩‍💼📊🐱🏃‍♀️", answer: "Mau is an accountant, loves cats, and enjoys running" },
+            { emojis: "👩‍💼📊🐱📖", answer: "Mau is an accountant, loves cats, and enjoys reading" },
+            { emojis: "👩‍💼📊🐱✈️", answer: "Mau is an accountant, loves cats, and enjoys traveling" },
+            { emojis: "👩‍💼📊🐱🎮", answer: "Mau is an accountant, loves cats, and enjoys gaming" },
+            { emojis: "👩‍💼📊🐱🍿", answer: "Mau is an accountant, loves cats, and enjoys watching movies" }
+        ];
+
+        let currentStory = 0;
+        let timer;
+        let timeLeft = 15;
+        let username = '';
+        const users = [];
+        const colors = ['#ff7e5f', '#feb47b', '#ff6b6b', '#ff9a9e', '#ffecd2', '#fcb69f', '#ff6f61', '#ff8a5c', '#ffb6b9', '#ff9a8b'];
+
+        function startTimer() {
+            timeLeft = 15;
+            document.getElementById('timer').textContent = `Time left: ${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = `Time left: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    document.getElementById('result').textContent = "Time's up! ⏰";
+                    document.getElementById('result').style.color = "red";
+                }
+            }, 1000);
+        }
+
+        function checkGuess() {
+            const guess = document.getElementById('guess').value.toLowerCase();
+            const correctAnswer = stories[currentStory].answer;
+            const result = document.getElementById('result');
+
+            if (guess === correctAnswer) {
+                result.textContent = `Correct, ${username}! 🎉`;
+                result.style.color = "green";
+                clearInterval(timer);
+                highlightCorrectAnswer(username, guess);
+            }
+
+            users.push({ name: username, answer: guess });
+            updateUserList();
+        }
+
+        function showAnswer() {
+            const result = document.getElementById('result');
+            result.textContent = `The correct answer is: ${stories[currentStory].answer}`;
+            result.style.color = "blue";
+            clearInterval(timer);
+        }
+
+        function nextStory() {
+            currentStory = (currentStory + 1) % stories.length;
+            document.getElementById('story').textContent = stories[currentStory].emojis;
+            document.getElementById('guess').value = '';
+            document.getElementById('result').textContent = '';
+            startTimer();
+        }
+
+        function startGame() {
+            username = document.getElementById('username').value;
+            if (username) {
+                document.getElementById('login').style.display = 'none';
+                document.getElementById('game').style.display = 'block';
+                startTimer();
+            } else {
+                alert('Please enter your name');
+            }
+        }
+
+        function updateUserList() {
+            const userList = document.getElementById('user-list');
+            userList.innerHTML = '';
+            users.forEach((user, index) => {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.textContent = `${user.name}: ${user.answer}`;
+                bubble.style.color = colors[index % colors.length];
+                bubble.style.top = `${Math.random() * 80 + 10}%`;
+                bubble.style.left = `${Math.random() * 80 + 10}%`;
+                userList.appendChild(bubble);
+            });
+        }
+
+        function highlightCorrectAnswer(name, answer) {
+            const bubbles = document.querySelectorAll('.bubble');
+            bubbles.forEach(bubble => {
+                if (bubble.textContent === `${name}: ${answer}`) {
+                    bubble.style.animation = 'highlight 1s infinite';
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('login').style.display = 'block';
+        });
+    </script>
+</body>
+</html>
